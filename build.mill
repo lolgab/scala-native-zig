@@ -1,0 +1,37 @@
+//| mill-version: 1.1.2
+//| mill-jvm-version: 17
+
+import mill._
+import mill.scalalib._
+import mill.scalanativelib._
+
+object app
+    extends Cross[App](
+      "x86_64-windows-gnu",
+      "aarch64-windows-gnu",
+      "aarch64-macos-none",
+      "x86_64-macos-none",
+      "aarch64-linux-gnu",
+      "x86_64-linux-gnu",
+    )
+
+trait App extends ScalaNativeModule with Cross.Module[String] {
+  def scalaVersion = "3.8.1"
+  def scalaNativeVersion = "0.5.10"
+
+  override def nativeTarget = Some(crossValue)
+
+  override def nativeClang = Task {
+    val f = Task.dest / "clang.sh"
+    os.write(f, "#!/bin/bash\nzig cc $@", "rwxr-xr-x")
+    PathRef(f)
+  }
+  override def nativeClangPP = Task {
+    val f = Task.dest / "clangpp.sh"
+    os.write(f, "#!/bin/bash\nzig c++ $@", "rwxr-xr-x")
+    PathRef(f)
+  }
+  override def nativeCompileOptions = Seq.empty
+  override def nativeLinkingOptions = Seq.empty
+  override def nativeBaseName = s"app-${crossValue}"
+}
